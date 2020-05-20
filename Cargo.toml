@@ -1,0 +1,10 @@
+[package]
+name = "sv_auto_order"
+version = "0.1.0"
+authors = ["tux3 <barrdetwix@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+clap = "2.33"
+sv-parser = "0.7"
+rayon = "0.9"
