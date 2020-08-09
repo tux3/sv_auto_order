@@ -18,6 +18,12 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .help("Print more details"),
         )
         .arg(
+            Arg::with_name("absolute")
+                .short("a")
+                .long("absolute")
+                .help("Output absolute paths"),
+        )
+        .arg(
             Arg::with_name("sources")
                 .help("The source files")
                 .required(true)
@@ -26,6 +32,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .get_matches();
 
     let verbose = args.is_present("verbose");
+    let absolute = args.is_present("absolute");
     let filepaths: Vec<_> = args.values_of_os("sources").unwrap().collect();
     let files = filepaths.into_par_iter()
         .inspect(|f| if verbose { println!("Parsing {}", f.to_string_lossy()) } )
@@ -90,20 +97,28 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut visited_files = HashSet::new();
     for root in roots.into_iter() {
-        print_deps_recursive(root, &file_deps, &mut visited_files);
-        print!("{} ", root.name.to_string_lossy());
+        print_deps_recursive(root, &file_deps, &mut visited_files, absolute);
+        if absolute {
+            print!("{} ", std::fs::canonicalize(&root.name)?.to_string_lossy());
+        } else {
+            print!("{} ", root.name.to_string_lossy());
+        }
     }
 
     Ok(())
 }
 
 fn print_deps_recursive<'f>(file: &File, file_deps: &HashMap<&File, HashSet<&'f File>>,
-                        visited_files: &mut HashSet<&'f File>) {
+                        visited_files: &mut HashSet<&'f File>, absolute: bool) {
     let deps = file_deps.get(file).unwrap();
     for &dep in deps {
         if visited_files.insert(dep) {
-            print_deps_recursive(dep, file_deps, visited_files);
-            print!("{} ", dep.name.to_string_lossy());
+            print_deps_recursive(dep, file_deps, visited_files, absolute);
+            if absolute {
+                print!("{} ", std::fs::canonicalize(&dep.name).unwrap().to_string_lossy());
+            } else {
+                print!("{} ", dep.name.to_string_lossy());
+            }
         }
     }
 }
