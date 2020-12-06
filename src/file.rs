@@ -20,7 +20,7 @@ impl File {
         let parent_dir = Path::new(path).parent().unwrap();
         let includes: Vec<&Path> = vec![parent_dir];
         let defines = HashMap::new();
-        let (ast, defines) = parse_sv(path, &defines, &includes, false)?;
+        let (ast, defines) = parse_sv(path, &defines, &includes, false, true)?;
 
         let (modules_defined, modules_used) = Self::collect_modules(&ast);
         let (packages_defined, packages_used) = Self::collect_packages(&ast);
