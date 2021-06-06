@@ -58,17 +58,6 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut file_deps: HashMap<&File, HashSet<&File>> = HashMap::new();
     for file in &files {
         let mut deps = HashSet::new();
-        for module_use in &file.modules_used {
-            if let Some(&dep) = module_defs.get(module_use) {
-                if dep == file {
-                    continue
-                }
-                file_users.get_mut(dep).unwrap().insert(file);
-                if deps.insert(dep) && verbose {
-                    println!("{} uses a module from {}", file.name.to_string_lossy(), dep.name.to_string_lossy());
-                }
-            }
-        }
         for package_use in &file.packages_used {
             if let Some(&dep) = package_defs.get(package_use) {
                 if dep == file {
@@ -77,6 +66,23 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 file_users.get_mut(dep).unwrap().insert(file);
                 if deps.insert(dep) && verbose {
                     println!("{} uses a package/class from {}", file.name.to_string_lossy(), dep.name.to_string_lossy());
+                }
+            }
+        }
+        'module_used_loop: for module_use in &file.modules_used {
+            if let Some(&dep) = module_defs.get(module_use) {
+                if dep == file {
+                    continue
+                }
+                for dep_package_use in &dep.packages_used {
+                    if file.packages_defined.contains(dep_package_use) {
+                        // Package use has priority over module use, so don't consider this dep
+                        continue 'module_used_loop
+                    }
+                }
+                file_users.get_mut(dep).unwrap().insert(file);
+                if deps.insert(dep) && verbose {
+                    println!("{} uses a module from {}", file.name.to_string_lossy(), dep.name.to_string_lossy());
                 }
             }
         }
