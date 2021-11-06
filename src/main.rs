@@ -113,7 +113,7 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 
     let mut visited_files = HashSet::new();
-    for root in roots.into_iter() {
+    for root in roots {
         print_deps_recursive(root, &file_deps, &mut visited_files, absolute);
         if absolute {
             print!("{} ", std::fs::canonicalize(&root.name)?.to_string_lossy());
