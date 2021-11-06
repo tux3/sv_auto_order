@@ -1,12 +1,11 @@
-use std::ffi::{OsStr, OsString};
-use std::error::Error;
 use sv_parser::{parse_sv, unwrap_node, SyntaxTree, Defines, RefNode};
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::hash::{Hash, Hasher};
+use anyhow::Result;
 
 pub struct File {
-    pub name: OsString,
+    pub name: PathBuf,
     pub modules_defined: HashSet<String>,
     pub modules_used: HashSet<String>,
     pub packages_defined: HashSet<String>,
@@ -16,10 +15,10 @@ pub struct File {
 }
 
 impl File {
-    pub fn new(path: &OsStr, incdirs: &[&Path]) -> Result<File, Box<dyn Error + Send + Sync>> {
+    pub fn new(path: &Path, incdirs: &[&Path]) -> Result<File> {
         let defines = HashMap::new();
         let mut incdirs = incdirs.to_vec();
-        let parent_dir = Path::new(path).parent().unwrap();
+        let parent_dir = path.parent().unwrap();
         incdirs.push(parent_dir);
         let (ast, defines) = parse_sv(path, &defines, &incdirs, false, true)?;
 

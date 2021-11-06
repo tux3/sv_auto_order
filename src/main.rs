@@ -2,14 +2,14 @@
 
 use clap::{App, Arg};
 use rayon::prelude::*;
-use std::error::Error;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use anyhow::{Context, Result};
 
 mod file;
 use file::File;
 
-fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+fn main() -> Result<()> {
     let args = App::new("SV Auto Order")
         .about("Detect compilation order for SystemVerilog files")
         .arg(
@@ -47,8 +47,9 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let filepaths: Vec<_> = args.values_of_os("sources").unwrap().collect();
     let files = filepaths.into_par_iter()
         .inspect(|f| if verbose { println!("Parsing {}", f.to_string_lossy()) } )
-        .map(|p| File::new(p, &incdirs))
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(Path::new)
+        .map(|p| File::new(p, &incdirs).with_context(|| format!("While parsing {}", p.display())))
+        .collect::<Result<Vec<_>>>()?;
 
     let mut module_defs: HashMap<String, &File> = HashMap::new();
     let mut package_defs: HashMap<String, &File> = HashMap::new();
