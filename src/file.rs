@@ -16,11 +16,12 @@ pub struct File {
 }
 
 impl File {
-    pub fn new(path: &OsStr) -> Result<File, Box<dyn Error + Send + Sync>> {
-        let parent_dir = Path::new(path).parent().unwrap();
-        let includes: Vec<&Path> = vec![parent_dir];
+    pub fn new(path: &OsStr, incdirs: &[&Path]) -> Result<File, Box<dyn Error + Send + Sync>> {
         let defines = HashMap::new();
-        let (ast, defines) = parse_sv(path, &defines, &includes, false, true)?;
+        let mut incdirs = incdirs.to_vec();
+        let parent_dir = Path::new(path).parent().unwrap();
+        incdirs.push(parent_dir);
+        let (ast, defines) = parse_sv(path, &defines, &incdirs, false, true)?;
 
         let (modules_defined, modules_used) = Self::collect_modules(&ast);
         let (packages_defined, packages_used) = Self::collect_packages(&ast);

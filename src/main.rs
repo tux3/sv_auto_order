@@ -4,6 +4,7 @@ use clap::{App, Arg};
 use rayon::prelude::*;
 use std::error::Error;
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
 
 mod file;
 use file::File;
@@ -24,6 +25,15 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .help("Output absolute paths"),
         )
         .arg(
+            Arg::with_name("include_paths")
+                .short("i")
+                .long("include-path")
+                .help("Add a directory to the include paths")
+                .takes_value(true)
+                .multiple(true)
+                .number_of_values(1),
+        )
+        .arg(
             Arg::with_name("sources")
                 .help("The source files")
                 .required(true)
@@ -33,10 +43,11 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let verbose = args.is_present("verbose");
     let absolute = args.is_present("absolute");
+    let incdirs: Vec<_> = args.values_of_os("include_paths").unwrap_or_default().map(Path::new).collect();
     let filepaths: Vec<_> = args.values_of_os("sources").unwrap().collect();
     let files = filepaths.into_par_iter()
         .inspect(|f| if verbose { println!("Parsing {}", f.to_string_lossy()) } )
-        .map(File::new)
+        .map(|p| File::new(p, &incdirs))
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut module_defs: HashMap<String, &File> = HashMap::new();
