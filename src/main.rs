@@ -1,6 +1,6 @@
 #![recursion_limit="256"]
 
-use clap::{App, Arg};
+use clap::{App, arg};
 use rayon::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -12,32 +12,14 @@ use file::File;
 fn main() -> Result<()> {
     let args = App::new("SV Auto Order")
         .about("Detect compilation order for SystemVerilog files")
-        .arg(
-            Arg::with_name("verbose")
-                .short("v")
-                .long("verbose")
-                .help("Print more details"),
+        .arg(arg!(-v --verbose "Print more details")
+        )
+        .arg(arg!(-a --absolute "Output absolute paths")
+        )
+        .arg(arg!(include_paths: -i --"include-path" [value] "Add a directory to the include paths").multiple_occurrences(true)
         )
         .arg(
-            Arg::with_name("absolute")
-                .short("a")
-                .long("absolute")
-                .help("Output absolute paths"),
-        )
-        .arg(
-            Arg::with_name("include_paths")
-                .short("i")
-                .long("include-path")
-                .help("Add a directory to the include paths")
-                .takes_value(true)
-                .multiple(true)
-                .number_of_values(1),
-        )
-        .arg(
-            Arg::with_name("sources")
-                .help("The source files")
-                .required(true)
-                .multiple(true)
+            arg!(<sources> "The source files").multiple_values(true)
         )
         .get_matches();
 
